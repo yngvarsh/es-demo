@@ -35,7 +35,7 @@ def deserialize(event: dict) -> Event:
                     event_version=event_version,
                     created_at=event["meta"]["created_at"],
                 ),
-                **event["data"],
+                **event["data"],  # type: ignore
             )
     except (TypeError, KeyError):
         raise InvalidSerializedEvent

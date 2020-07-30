@@ -22,7 +22,7 @@ class EventMeta:
 @dataclass(frozen=True)
 class Event:
     meta: EventMeta
-    current_version: ClassVar[Version] = 1
+    current_version: ClassVar[Version] = Version(1)  # noqa: B008
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -30,14 +30,18 @@ class Event:
 
     @classmethod
     def factory(
-        cls: Type[E], aggregate_id: ID, aggregate_version: Version = 1, created_at: Optional[CreatedAt] = None, **data,
+        cls: Type[E],
+        aggregate_id: ID,
+        aggregate_version: Version = Version(0),  # noqa: B008
+        created_at: Optional[CreatedAt] = None,
+        **data,
     ) -> E:
         return cls(
             meta=EventMeta(
                 aggregate_id=aggregate_id,
                 aggregate_version=aggregate_version,
                 event_version=cls.current_version,
-                created_at=created_at or datetime.utcnow(),
+                created_at=created_at or CreatedAt(datetime.utcnow()),
             ),
-            **data,
+            **data,  # type: ignore
         )

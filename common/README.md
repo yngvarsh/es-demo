@@ -3,6 +3,7 @@
 This library contains common utils for event driven architecture implementation:
 
 - Events
+- Aggregates
 
 ## Development
 

@@ -5,14 +5,14 @@ from common.exceptions import EventVersionMismatch, InvalidSerializedEvent, Unre
 
 
 @pytest.mark.freeze_time("2020-08-09T20:00:00")
-def test_factory(event_subclass, now, aggregate_id):
-    new_event = event_subclass.factory(aggregate_id=aggregate_id, some_field="abc")
+def test_factory(dummy_event_cls, now, aggregate_id):
+    new_event = dummy_event_cls.factory(aggregate_id=aggregate_id, some_field="abc")
     assert new_event.meta.created_at == now
-    assert new_event.meta.aggregate_version == 1
+    assert new_event.meta.aggregate_version == 0
 
 
-def test_serde_ok(event_subclass, aggregate_id):
-    new_event = event_subclass.factory(aggregate_id=aggregate_id, some_field="abc")
+def test_serde_ok(dummy_event_cls, aggregate_id):
+    new_event = dummy_event_cls.factory(aggregate_id=aggregate_id, some_field="abc")
     serialized = serialize(new_event)
     deserialized = deserialize(serialized)
     assert new_event.meta == deserialized.meta
