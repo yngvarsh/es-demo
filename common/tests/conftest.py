@@ -1,12 +1,14 @@
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Awaitable, Tuple
 from uuid import uuid4
 
 import pytest
 
-from common.aggregate import AggregateRoot, attribute, command
-from common.events import Event, EventSchema
+from aioredis import Redis
+from asyncpg.connection import Connection
+from asyncpgsa.transactionmanager import ConnectionTransactionContextManager
+from asynctest import CoroutineMock, MagicMock
+
+from .fake import First, Second, EventSchema
 
 
 @pytest.fixture
@@ -20,60 +22,95 @@ def aggregate_id():
 
 
 @pytest.fixture
-def event_cls_1():
-    @dataclass(frozen=True)
-    class First(Event):
-        some_field: str
-
-    return First
-
-
-@pytest.fixture
-def event_cls_2():
-    @dataclass(frozen=True)
-    class Second(Event):
-        another_field: str
-
-    return Second
+def events(aggregate_id, now):
+    return [
+        First.factory(aggregate_id=aggregate_id, aggregate_version=0, created_at=now, some_field="foo"),
+        Second.factory(aggregate_id=aggregate_id, aggregate_version=1, created_at=now, another_field="one"),
+        First.factory(aggregate_id=aggregate_id, aggregate_version=2, created_at=now, some_field="bar"),
+        Second.factory(aggregate_id=aggregate_id, aggregate_version=3, created_at=now, another_field="two"),
+        First.factory(aggregate_id=aggregate_id, aggregate_version=4, created_at=now, some_field="baz"),
+    ]
 
 
 @pytest.fixture
-def event_schema(event_cls_1, event_cls_2):
-    EventSchema.register(event_cls_1)
-    EventSchema.register(event_cls_2)
+def stored_events(aggregate_id, now):
+    return [
+        dict(
+            pk=1,
+            aggregate_id=aggregate_id,
+            aggregate_version=0,
+            state='{"some_field": "foo", "meta": {"aggregate_id": "%s", "aggregate_version": 0, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            initial='{"some_field": "foo", "meta": {"aggregate_id": "%s", "aggregate_version": 0, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            created_at=now,
+        ),
+        dict(
+            pk=2,
+            aggregate_id=aggregate_id,
+            aggregate_version=1,
+            state='{"another_field": "one", "meta": {"aggregate_id": "%s", "aggregate_version": 1, "created_at": "%s"}, "event_type": "Second"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            initial='{"another_field": "one", "meta": {"aggregate_id": "%s", "aggregate_version": 1, "created_at": "%s"}, "event_type": "Second"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            created_at=now,
+        ),
+        dict(
+            pk=3,
+            aggregate_id=aggregate_id,
+            aggregate_version=2,
+            state='{"some_field": "bar", "meta": {"aggregate_id": "%s", "aggregate_version": 2, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            initial='{"some_field": "bar", "meta": {"aggregate_id": "%s", "aggregate_version": 2, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            created_at=now,
+        ),
+        dict(
+            pk=4,
+            aggregate_id=aggregate_id,
+            aggregate_version=3,
+            state='{"another_field": "two", "meta": {"aggregate_id": "%s", "aggregate_version": 3, "created_at": "%s"}, "event_type": "Second"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            initial='{"another_field": "two", "meta": {"aggregate_id": "%s", "aggregate_version": 3, "created_at": "%s"}, "event_type": "Second"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            created_at=now,
+        ),
+        dict(
+            pk=5,
+            aggregate_id=aggregate_id,
+            aggregate_version=4,
+            state='{"some_field": "baz", "meta": {"aggregate_id": "%s", "aggregate_version": 4, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            initial='{"some_field": "baz", "meta": {"aggregate_id": "%s", "aggregate_version": 4, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            % (str(aggregate_id), now.isoformat()),
+            created_at=now,
+        ),
+    ]
+
+
+@pytest.fixture
+def event_schema():
     return EventSchema()
 
 
 @pytest.fixture
-def dummy_aggregate_cls(event_cls_1):
-    class FirstAggregate(AggregateRoot):
-        @attribute
-        def some_field(self):
-            return self.state.get("some_field", [])
+def connection(stored_events, aggregate_id):
+    c = MagicMock(Connection)
+    cursor = MagicMock()
+    cursor.__aiter__.return_value = stored_events
+    c.cursor.return_value = cursor
+    return c
 
-        def apply_event(self, event: event_cls_1) -> None:
-            self.state.setdefault("some_field", []).append(event.some_field)
 
-        def _add_some_field(self, some_field):
-            return event_cls_1.factory(aggregate_id=self.id, aggregate_version=self.version, some_field=some_field)
+@pytest.fixture
+def transaction(connection):
+    t = MagicMock(ConnectionTransactionContextManager)
+    t.__aenter__.return_value = connection
+    return t
 
-        @command
-        async def add_some_field(self, some_field: str) -> event_cls_1:
-            return self._add_some_field(some_field)
 
-        @command
-        async def no_effect(self, some_field: str) -> None:
-            pass
-
-        @command
-        async def add_some_field_with_action(self, some_field: str) -> Tuple[event_cls_1, Awaitable]:
-            async def effect():
-                print("Effect")
-
-            return self._add_some_field(some_field), effect()
-
-        @command(lazy=False)
-        async def add_some_field_eager(self, some_field: str) -> event_cls_1:
-            return self._add_some_field(some_field)
-
-    return FirstAggregate
+@pytest.fixture
+def redis():
+    r = MagicMock(Redis)
+    r.publish = CoroutineMock()
+    return r

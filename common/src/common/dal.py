@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from asyncpg import Connection
 from sqlalchemy import BigInteger, Column, DateTime, Integer, MetaData, Table, UniqueConstraint
@@ -22,9 +22,9 @@ stored_events = Table(
 
 
 class EventStore:
-    def __init__(self, connection: Connection, schema: EventSchema):
+    def __init__(self, connection: Connection, schema: Optional[EventSchema] = None):
         self.connection = connection
-        self.schema = schema
+        self.schema = schema or EventSchema()
 
     async def get(self, aggregate_id: ID) -> List[Event]:
         query = (

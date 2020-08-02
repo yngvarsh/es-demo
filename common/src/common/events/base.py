@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from types import MappingProxyType
 from typing import Dict, Optional, Type
@@ -10,23 +10,20 @@ _REGISTRY: Dict[str, Type["Event"]] = {}
 REGISTRY = MappingProxyType(_REGISTRY)
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
 class EventMeta:
+    aggregate_id: ID
+    aggregate_version: Version
     created_at: CreatedAt
-    aggregate_id: ID = field(compare=True)
-    aggregate_version: Version = field(compare=True)
 
 
-@dataclass(frozen=True, order=False)
+@dataclass(frozen=True)
 class Event:
     meta: EventMeta
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         _REGISTRY.setdefault(cls.__name__, cls)
-
-    def __gt__(self, other: "Event") -> bool:
-        return isinstance(other, self.__class__) and self.meta > other.meta
 
     @classmethod
     def factory(
