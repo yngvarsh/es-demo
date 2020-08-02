@@ -1,4 +1,4 @@
 from .base import Event
-from .serde import deserialize, serialize
+from .schema import EventSchema
 
-__all__ = ["Event", "deserialize", "serialize"]
+__all__ = ["Event", "EventSchema"]

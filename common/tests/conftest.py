@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 
 from common.aggregate import AggregateRoot, attribute, command
-from common.events import Event
+from common.events import Event, EventSchema
 
 
 @pytest.fixture
@@ -20,30 +20,45 @@ def aggregate_id():
 
 
 @pytest.fixture
-def dummy_event_cls():
+def event_cls_1():
     @dataclass(frozen=True)
-    class Dummy(Event):
+    class First(Event):
         some_field: str
-        current_version = 2
 
-    return Dummy
+    return First
 
 
 @pytest.fixture
-def dummy_aggregate_cls(dummy_event_cls):
-    class DummyAggregate(AggregateRoot):
+def event_cls_2():
+    @dataclass(frozen=True)
+    class Second(Event):
+        another_field: str
+
+    return Second
+
+
+@pytest.fixture
+def event_schema(event_cls_1, event_cls_2):
+    EventSchema.register(event_cls_1)
+    EventSchema.register(event_cls_2)
+    return EventSchema()
+
+
+@pytest.fixture
+def dummy_aggregate_cls(event_cls_1):
+    class FirstAggregate(AggregateRoot):
         @attribute
         def some_field(self):
             return self.state.get("some_field", [])
 
-        def apply_event(self, event: dummy_event_cls) -> None:
+        def apply_event(self, event: event_cls_1) -> None:
             self.state.setdefault("some_field", []).append(event.some_field)
 
         def _add_some_field(self, some_field):
-            return dummy_event_cls.factory(aggregate_id=self.id, aggregate_version=self.version, some_field=some_field)
+            return event_cls_1.factory(aggregate_id=self.id, aggregate_version=self.version, some_field=some_field)
 
         @command
-        async def add_some_field(self, some_field: str) -> dummy_event_cls:
+        async def add_some_field(self, some_field: str) -> event_cls_1:
             return self._add_some_field(some_field)
 
         @command
@@ -51,14 +66,14 @@ def dummy_aggregate_cls(dummy_event_cls):
             pass
 
         @command
-        async def add_some_field_with_action(self, some_field: str) -> Tuple[dummy_event_cls, Awaitable]:
+        async def add_some_field_with_action(self, some_field: str) -> Tuple[event_cls_1, Awaitable]:
             async def effect():
                 print("Effect")
 
             return self._add_some_field(some_field), effect()
 
         @command(lazy=False)
-        async def add_some_field_eager(self, some_field: str) -> dummy_event_cls:
+        async def add_some_field_eager(self, some_field: str) -> event_cls_1:
             return self._add_some_field(some_field)
 
-    return DummyAggregate
+    return FirstAggregate

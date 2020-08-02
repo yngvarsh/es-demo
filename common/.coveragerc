@@ -4,8 +4,9 @@ omit =
 
 [report]
 fail_under = 85.0
+# TODO: Add tests For DAL
 omit =
-  src/common/exceptions.py
+  src/common/dal.py
   src/common/typing.py
 skip_covered = true
 skip_empty = true
