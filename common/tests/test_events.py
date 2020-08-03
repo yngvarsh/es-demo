@@ -2,17 +2,19 @@ import pytest
 
 from marshmallow import ValidationError
 
+from common.typing import Version
+
 from .fake import First, Second
 
 
 @pytest.mark.freeze_time("2020-08-09T20:00:00")
 def test_event(now, aggregate_id):
     new_event = First.factory(aggregate_id=aggregate_id, some_field="abc")
-    assert new_event.meta.created_at == now
-    assert new_event.meta.aggregate_version == 0
-    same_event = First.factory(aggregate_id=aggregate_id, aggregate_version=0, some_field="abc")
+    assert new_event.created_at == now
+    assert new_event.aggregate_version == 0
+    same_event = First.factory(aggregate_id=aggregate_id, aggregate_version=Version(0), some_field="abc")
     assert new_event == same_event
-    next_event = First.factory(aggregate_id=aggregate_id, aggregate_version=1, some_field="abc")
+    next_event = First.factory(aggregate_id=aggregate_id, aggregate_version=Version(1), some_field="abc")
     assert new_event != next_event
 
 
@@ -27,21 +29,21 @@ def test_serde_ok(aggregate_id, event_schema):
 
 @pytest.mark.freeze_time("2020-08-09T20:00:00")
 @pytest.mark.parametrize(
-    "data,meta",
+    "data",
     [
-        ({"some_field": "abc"}, {"aggregate_version": 1, "created_at": "2020-08-09T20:00:00"}),
-        ({"event_type": "First", "some_field": "abc"}, {"aggregate_version": 1}),
-        (
-            {"event_type": "First", "another_field": "abc"},
-            {"aggregate_version": 1, "created_at": "2020-08-09T20:00:00"},
-        ),
-        (
-            {"event_type": "First", "some_field": "abc", "extra_field": "abc"},
-            {"aggregate_version": 1, "created_at": "2020-08-09T20:00:00"},
-        ),
+        {"some_field": "abc", "aggregate_version": 1, "created_at": "2020-08-09T20:00:00"},
+        {"event_type": "First", "some_field": "abc", "aggregate_version": 1},
+        {"event_type": "First", "another_field": "abc", "aggregate_version": 1, "created_at": "2020-08-09T20:00:00"},
+        {
+            "event_type": "First",
+            "some_field": "abc",
+            "extra_field": "abc",
+            "aggregate_version": 1,
+            "created_at": "2020-08-09T20:00:00",
+        },
     ],
 )
-def test_deserialize_err(data, meta, aggregate_id, event_schema):
-    serialized = {**data, "meta": dict(meta, aggregate_id=str(aggregate_id))}
+def test_deserialize_err(data, aggregate_id, event_schema):
+    serialized = dict(data, aggregate_id=str(aggregate_id))
     with pytest.raises(ValidationError):
         event_schema.load(serialized)

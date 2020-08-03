@@ -1,0 +1,38 @@
+version: "3.8"
+services:
+  auth_service:
+    build:
+      context: .
+      dockerfile: Dockerfile-auth
+      target: app
+    ports:
+      - 5001:5001
+    depends_on:
+      - redis
+      - auth_db
+      - auth_migrations
+    environment:
+      - POSTGRES_HOST=auth_db
+      - REDIS_HOST=redis
+      - AUTH_SECRET=qwerty
+  auth_migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile-auth
+      target: migrations
+    depends_on:
+      - auth_db
+    environment:
+      - POSTGRES_HOST=auth_db
+  redis:
+    image: redis:6-alpine
+    ports:
+      - 6379:6379
+  auth_db:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=auth
+      - POSTGRES_PASSWORD=auth
+      - POSTGRES_DB=auth

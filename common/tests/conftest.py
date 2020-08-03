@@ -8,7 +8,7 @@ from asyncpg.connection import Connection
 from asyncpgsa.transactionmanager import ConnectionTransactionContextManager
 from asynctest import CoroutineMock, MagicMock
 
-from .fake import First, Second, EventSchema
+from .fake import EventSchema, First, Second
 
 
 @pytest.fixture
@@ -39,9 +39,9 @@ def stored_events(aggregate_id, now):
             pk=1,
             aggregate_id=aggregate_id,
             aggregate_version=0,
-            state='{"some_field": "foo", "meta": {"aggregate_id": "%s", "aggregate_version": 0, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            state='{"some_field": "foo", "aggregate_id": "%s", "aggregate_version": 0, "created_at": "%s", "event_type": "First"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
-            initial='{"some_field": "foo", "meta": {"aggregate_id": "%s", "aggregate_version": 0, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            initial='{"some_field": "foo", "aggregate_id": "%s", "aggregate_version": 0, "created_at": "%s", "event_type": "First"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
             created_at=now,
         ),
@@ -49,9 +49,9 @@ def stored_events(aggregate_id, now):
             pk=2,
             aggregate_id=aggregate_id,
             aggregate_version=1,
-            state='{"another_field": "one", "meta": {"aggregate_id": "%s", "aggregate_version": 1, "created_at": "%s"}, "event_type": "Second"}'  # noqa: E501
+            state='{"another_field": "one", "aggregate_id": "%s", "aggregate_version": 1, "created_at": "%s", "event_type": "Second"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
-            initial='{"another_field": "one", "meta": {"aggregate_id": "%s", "aggregate_version": 1, "created_at": "%s"}, "event_type": "Second"}'  # noqa: E501
+            initial='{"another_field": "one", "aggregate_id": "%s", "aggregate_version": 1, "created_at": "%s", "event_type": "Second"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
             created_at=now,
         ),
@@ -59,9 +59,9 @@ def stored_events(aggregate_id, now):
             pk=3,
             aggregate_id=aggregate_id,
             aggregate_version=2,
-            state='{"some_field": "bar", "meta": {"aggregate_id": "%s", "aggregate_version": 2, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            state='{"some_field": "bar", "aggregate_id": "%s", "aggregate_version": 2, "created_at": "%s", "event_type": "First"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
-            initial='{"some_field": "bar", "meta": {"aggregate_id": "%s", "aggregate_version": 2, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            initial='{"some_field": "bar", "aggregate_id": "%s", "aggregate_version": 2, "created_at": "%s", "event_type": "First"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
             created_at=now,
         ),
@@ -69,9 +69,9 @@ def stored_events(aggregate_id, now):
             pk=4,
             aggregate_id=aggregate_id,
             aggregate_version=3,
-            state='{"another_field": "two", "meta": {"aggregate_id": "%s", "aggregate_version": 3, "created_at": "%s"}, "event_type": "Second"}'  # noqa: E501
+            state='{"another_field": "two", "aggregate_id": "%s", "aggregate_version": 3, "created_at": "%s", "event_type": "Second"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
-            initial='{"another_field": "two", "meta": {"aggregate_id": "%s", "aggregate_version": 3, "created_at": "%s"}, "event_type": "Second"}'  # noqa: E501
+            initial='{"another_field": "two", "aggregate_id": "%s", "aggregate_version": 3, "created_at": "%s", "event_type": "Second"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
             created_at=now,
         ),
@@ -79,9 +79,9 @@ def stored_events(aggregate_id, now):
             pk=5,
             aggregate_id=aggregate_id,
             aggregate_version=4,
-            state='{"some_field": "baz", "meta": {"aggregate_id": "%s", "aggregate_version": 4, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            state='{"some_field": "baz", "aggregate_id": "%s", "aggregate_version": 4, "created_at": "%s", "event_type": "First"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
-            initial='{"some_field": "baz", "meta": {"aggregate_id": "%s", "aggregate_version": 4, "created_at": "%s"}, "event_type": "First"}'  # noqa: E501
+            initial='{"some_field": "baz", "aggregate_id": "%s", "aggregate_version": 4, "created_at": "%s", "event_type": "First"}'  # noqa: E501
             % (str(aggregate_id), now.isoformat()),
             created_at=now,
         ),

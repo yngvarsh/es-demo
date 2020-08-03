@@ -11,15 +11,10 @@ REGISTRY = MappingProxyType(_REGISTRY)
 
 
 @dataclass(frozen=True)
-class EventMeta:
+class Event:
     aggregate_id: ID
     aggregate_version: Version
     created_at: CreatedAt
-
-
-@dataclass(frozen=True)
-class Event:
-    meta: EventMeta
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -29,15 +24,13 @@ class Event:
     def factory(
         cls: Type[E],
         aggregate_id: Optional[ID] = None,
-        aggregate_version: Version = Version(0),  # noqa: B008
+        aggregate_version: Optional[Version] = None,  # noqa: B008
         created_at: Optional[CreatedAt] = None,
         **data,
     ) -> E:
         return cls(
-            meta=EventMeta(
-                aggregate_id=aggregate_id or ID(uuid4()),
-                aggregate_version=aggregate_version,
-                created_at=created_at or CreatedAt(datetime.utcnow()),
-            ),
+            aggregate_id=aggregate_id or ID(uuid4()),
+            aggregate_version=aggregate_version if aggregate_version is not None else Version(0),
+            created_at=created_at or CreatedAt(datetime.utcnow()),
             **data,  # type: ignore
         )

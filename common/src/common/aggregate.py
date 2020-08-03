@@ -3,14 +3,27 @@ from collections import deque
 from functools import partial, wraps
 from typing import Awaitable, Callable, Deque, List, Optional, Tuple, Union
 
+from asyncpg import Connection
+
 from .events import Event
 from .typing import ID, Version
+
+
+class Gateway:
+    def __init__(self, connection: Connection):
+        self.connection = connection
 
 
 class AggregateRoot(ABC):
     version = Version(0)
 
-    def __init__(self, id: Optional[ID] = None, event_stack: Optional[List[Event]] = None, *events: Event):
+    def __init__(
+        self,
+        id: Optional[ID] = None,
+        event_stack: Optional[List[Event]] = None,
+        *events: Event,
+        gateway: Optional[Gateway] = None,
+    ):
         self.id = id
         self.state: dict = {}
         self.event_stack = event_stack if event_stack is not None else []
@@ -18,6 +31,7 @@ class AggregateRoot(ABC):
         if events:
             self.internal.extend(events)
         self.actions: Deque[Awaitable] = deque()
+        self.gateway = gateway
 
     def apply_all_events(self) -> None:
         while len(self.internal):

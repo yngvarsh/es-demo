@@ -40,9 +40,9 @@ class EventStore:
                 {
                     "state": (serialized := self.schema.dump(event)),
                     "initial": serialized,
-                    "aggregate_id": event.meta.aggregate_id,
-                    "aggregate_version": event.meta.aggregate_version,
-                    "created_at": event.meta.created_at,
+                    "aggregate_id": event.aggregate_id,
+                    "aggregate_version": event.aggregate_version,
+                    "created_at": event.created_at,
                 }
                 for event in events
             ]
