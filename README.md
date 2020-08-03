@@ -10,4 +10,4 @@ To start application, run:
 docker-compose up --build
 ```
 
-And open [auth service](http://0.0.0.0:5001/graphql/) in browser.
+And open [gateway](http://0.0.0.0:4000/graphql/) in browser.

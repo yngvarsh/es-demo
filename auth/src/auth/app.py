@@ -9,13 +9,14 @@ from ariadne.contrib.federation import FederatedObjectType, make_federated_schem
 from asyncpgsa import create_pool
 from starlette.applications import Starlette
 
-from auth.resolvers import resolve_me, resolve_sign_up, resolve_user_reference
+from auth.resolvers import *
 
 path = (Path(__file__).parent / "schema.graphql").resolve()
 type_defs = gql(open(path).read())
 
 query = QueryType()
 query.set_field("me", resolve_me)
+query.set_field("login", resolve_login)
 
 mutation = MutationType()
 mutation.set_field("signUp", resolve_sign_up)
@@ -31,7 +32,6 @@ application.mount("/graphql", GraphQL(schema, debug=True))
 
 @application.on_event("startup")
 async def setup_app():
-    print(os.getenv("POSTGRES_HOST", "MISSING"))
     application.state.db = await create_pool(
         host=os.getenv("POSTGRES_HOST", "localhost"),
         port=os.getenv("POSTGRES_PORT", 5432),

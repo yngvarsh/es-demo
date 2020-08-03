@@ -1,0 +1,23 @@
+{
+  "name": "event-sourcing-gateway",
+  "version": "0.1.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "server": "nodemon ./app.js"
+  },
+  "keywords": [],
+  "author": "Ihar Shynkarou <ishynkarou@remedypointsolutions.com>",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/federation": "^0.13.2",
+    "@apollo/gateway": "^0.13.2",
+    "apollo-server": "^2.11.0",
+    "apollo-server-express": "^2.11.0",
+    "express": "^4.17.1",
+    "express-jwt": "^5.3.3",
+    "graphql-middleware": "^4.0.2",
+    "jsonwebtoken": "^8.5.1",
+    "nodemon": "^2.0.3"
+  }
+}

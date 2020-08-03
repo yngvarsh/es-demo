@@ -1,0 +1,11 @@
+FROM node:12
+
+WORKDIR /app
+
+COPY ./gateway/package.json ./gateway/package-lock.json /app/
+
+RUN npm install
+
+COPY ./gateway/app.js .
+
+ENTRYPOINT ["npm", "run", "server"]

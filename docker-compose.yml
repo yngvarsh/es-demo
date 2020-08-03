@@ -1,12 +1,21 @@
 version: "3.8"
 services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile-gateway
+    ports:
+      - 4000:4000
+    depends_on:
+      - auth_service
+    environment:
+      - AUTH_SERVICE_URL=http://auth_service:5001/graphql/
+      - AUTH_SECRET=qwerty
   auth_service:
     build:
       context: .
       dockerfile: Dockerfile-auth
       target: app
-    ports:
-      - 5001:5001
     depends_on:
       - redis
       - auth_db
