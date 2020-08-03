@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "common"
-version = "0.3.0"
+version = "0.4.0"
 description = "Common utils for Event Driven Architecture"
 authors = ["Ihar Shynkarou <ishynkarou@remedypointsolutions.com>"]
 

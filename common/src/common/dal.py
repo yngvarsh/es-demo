@@ -21,30 +21,26 @@ stored_events = Table(
 )
 
 
-class EventStore:
-    def __init__(self, connection: Connection, schema: Optional[EventSchema] = None):
-        self.connection = connection
-        self.schema = schema or EventSchema()
+async def get_events(connection: Connection, aggregate_id: ID, schema: Optional[EventSchema] = None) -> List[Event]:
+    query = (
+        stored_events.select()
+        .where(stored_events.c.aggregate_id == aggregate_id)
+        .order_by(stored_events.c.aggregate_version)
+    )
+    return [(schema or EventSchema()).loads(row["state"]) async for row in connection.cursor(query)]
 
-    async def get(self, aggregate_id: ID) -> List[Event]:
-        query = (
-            stored_events.select()
-            .where(stored_events.c.aggregate_id == aggregate_id)
-            .order_by(stored_events.c.aggregate_version)
-        )
-        return [self.schema.loads(row["state"]) async for row in self.connection.cursor(query)]
 
-    async def add(self, events: List[Event]) -> None:
-        query = stored_events.insert().values(
-            [
-                {
-                    "state": (serialized := self.schema.dump(event)),
-                    "initial": serialized,
-                    "aggregate_id": event.aggregate_id,
-                    "aggregate_version": event.aggregate_version,
-                    "created_at": event.created_at,
-                }
-                for event in events
-            ]
-        )
-        await self.connection.execute(query)
+async def add_events(connection: Connection, events: List[Event], schema: Optional[EventSchema] = None) -> None:
+    query = stored_events.insert().values(
+        [
+            {
+                "state": (serialized := (schema or EventSchema()).dump(event)),
+                "initial": serialized,
+                "aggregate_id": event.aggregate_id,
+                "aggregate_version": event.aggregate_version,
+                "created_at": event.created_at,
+            }
+            for event in events
+        ]
+    )
+    await connection.execute(query)

@@ -5,13 +5,9 @@ from typing import Awaitable, Callable, Deque, List, Optional, Tuple, Union
 
 from asyncpg import Connection
 
+from .dal import get_events
 from .events import Event
 from .typing import ID, Version
-
-
-class Gateway:
-    def __init__(self, connection: Connection):
-        self.connection = connection
 
 
 class AggregateRoot(ABC):
@@ -21,17 +17,27 @@ class AggregateRoot(ABC):
         self,
         id: Optional[ID] = None,
         event_stack: Optional[List[Event]] = None,
+        connection: Optional[Connection] = None,
         *events: Event,
-        gateway: Optional[Gateway] = None,
     ):
         self.id = id
         self.state: dict = {}
         self.event_stack = event_stack if event_stack is not None else []
+        self.connection = connection
         self.internal: Deque[Event] = deque()
         if events:
             self.internal.extend(events)
         self.actions: Deque[Awaitable] = deque()
-        self.gateway = gateway
+
+    async def load_events(self):
+        assert self.id, "User wasn't created"
+        assert self.connection, "Aggregate doesn't have database connection"
+        events = await get_events(self.connection, self.id)
+        self.internal.extend(events)
+        return self
+
+    def __await__(self):
+        return self.load_events().__await__()
 
     def apply_all_events(self) -> None:
         while len(self.internal):

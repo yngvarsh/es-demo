@@ -24,7 +24,7 @@ async def test_aggregate_new(capsys):
 
 
 @pytest.mark.asyncio
-async def test_aggregate_from_events(events, aggregate_id):
-    aggregate = FirstAggregate(aggregate_id, [], *events)
+async def test_aggregate_load(connection, aggregate_id):
+    aggregate = await FirstAggregate(aggregate_id, [], connection)
     assert aggregate.some_field == ["foo", "bar", "baz"]
     assert aggregate.another_field == "two"
